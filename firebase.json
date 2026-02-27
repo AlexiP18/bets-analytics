@@ -1,0 +1,1 @@
+{"flutter":{"platforms":{"android":{"default":{"projectId":"bets-analytics","appId":"1:171174513781:android:d834d7dec81bf8610e3c3c","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"bets-analytics","configurations":{"android":"1:171174513781:android:d834d7dec81bf8610e3c3c","web":"1:171174513781:web:69f5460aa7ff61ee0e3c3c"}}}}}}
