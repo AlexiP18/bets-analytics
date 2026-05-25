@@ -11,19 +11,28 @@ def load_data(filepath: str) -> Dict[str, Any]:
             return json.load(f)
     except FileNotFoundError:
         print(f"Error: Archivo {filepath} no encontrado.")
-        sys.exit(1)
+        return {}
     except json.JSONDecodeError:
         print(f"Error: El archivo {filepath} no contiene un JSON válido.")
-        sys.exit(1)
+        return {}
 
-def analyze_with_gemini(data: Dict[str, Any]) -> str:
-    """Envía los datos a Gemini y retorna la predicción en formato JSON."""
+def analyze_with_gemini(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Envía los datos a Gemini y retorna la predicción como un diccionario."""
     api_key = os.environ.get("GOOGLE_API_KEY")
+
     if not api_key:
-        print("Error: La variable de entorno GOOGLE_API_KEY no está configurada.")
-        # Para propósitos de demostración en este entorno, retornamos un mensaje informativo
-        # en lugar de salir, para que Jules pueda ver el flujo.
-        return json.dumps({"error": "Missing API Key", "status": "failed"})
+        print("Aviso: GOOGLE_API_KEY no configurada. Usando respuesta simulada.")
+        return {
+            "partido": f"{data.get('home_team', 'Local')} vs {data.get('away_team', 'Visitante')} {data.get('match_date', '')}",
+            "prediccion": {
+                "ganador": data.get('home_team', 'Local'),
+                "probabilidad_local": 0.50,
+                "probabilidad_empate": 0.25,
+                "probabilidad_visitante": 0.25,
+                "marcador_exacto": "2-1",
+                "analisis_breve": "Simulación: El equipo local tiene mejores estadísticas recientes."
+            }
+        }
 
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel('gemini-pro')
@@ -34,62 +43,45 @@ def analyze_with_gemini(data: Dict[str, Any]) -> str:
     Datos del partido:
     {json.dumps(data, indent=2)}
 
-    Debes responder EXCLUSIVAMENTE con un JSON válido que tenga la siguiente estructura:
+    Debes responder EXCLUSIVAMENTE con un JSON válido, sin bloques de código markdown, sin texto adicional.
+    Estructura requerida:
     {{
-        "partido": "Nombre del partido",
+        "partido": "NombreEquipo1 vs NombreEquipo2 YYYY-MM-DD",
         "prediccion": {{
             "ganador": "Local/Empate/Visitante",
             "probabilidad_local": float,
             "probabilidad_empate": float,
             "probabilidad_visitante": float,
             "marcador_exacto": "X-Y",
-            "analisis_breve": "Breve explicación de 2-3 líneas"
+            "analisis_breve": "Explicación de 2-3 líneas"
         }}
     }}
     """
 
     try:
         response = model.generate_content(prompt)
-        # Intentar extraer el JSON de la respuesta
         text = response.text.strip()
-        # A veces Gemini envuelve el JSON en bloques de código markdown
+
+        # Limpieza de markdown por si acaso
         if text.startswith("```json"):
             text = text.split("```json")[1].split("```")[0].strip()
         elif text.startswith("```"):
             text = text.split("```")[1].split("```")[0].strip()
 
-        return text
+        return json.loads(text)
     except Exception as e:
-        print(f"Error durante la llamada a la API de Gemini: {e}")
-        return json.dumps({"error": str(e), "status": "failed"})
+        print(f"Error durante la llamada a la API de Gemini o parsing: {e}")
+        return {"error": str(e), "status": "failed"}
 
 def main():
     input_file = "datos_temporales.json"
-
-    # 1. Cargar datos
-    print(f"Cargando datos de {input_file}...")
     data = load_data(input_file)
+    if not data:
+        print("No hay datos para analizar.")
+        return
 
-    # 2. Analizar con Gemini
-    print("Enviando datos a Gemini API...")
-    prediction_json = analyze_with_gemini(data)
-
-    # 3. Mostrar/Guardar resultado
-    try:
-        # Validar que sea un JSON válido
-        json_result = json.loads(prediction_json)
-        print("\nPredicción generada exitosamente:")
-        print(json.dumps(json_result, indent=2, ensure_ascii=False))
-
-        # Opcionalmente guardar en un archivo
-        with open("prediccion_resultado.json", "w", encoding="utf-8") as f:
-            json.dump(json_result, f, indent=2, ensure_ascii=False)
-            print("\nResultado guardado en prediccion_resultado.json")
-
-    except json.JSONDecodeError:
-        print("\nError: La IA no devolvió un JSON válido.")
-        print("Respuesta cruda de la IA:")
-        print(prediction_json)
+    prediction = analyze_with_gemini(data)
+    print(json.dumps(prediction, indent=2, ensure_ascii=False))
 
 if __name__ == "__main__":
     main()

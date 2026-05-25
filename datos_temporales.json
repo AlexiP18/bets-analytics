@@ -2,14 +2,27 @@
   "match": "Real Madrid vs Barcelona",
   "home_team": "Real Madrid",
   "away_team": "Barcelona",
+  "match_date": "2024-05-20",
   "recent_stats": {
     "Real Madrid": {
-      "last_5_matches": ["W", "W", "D", "W", "L"],
+      "last_5_matches": [
+        "W",
+        "W",
+        "D",
+        "W",
+        "L"
+      ],
       "avg_goals_scored": 2.4,
       "avg_goals_conceded": 0.8
     },
     "Barcelona": {
-      "last_5_matches": ["W", "D", "W", "W", "W"],
+      "last_5_matches": [
+        "W",
+        "D",
+        "W",
+        "W",
+        "W"
+      ],
       "avg_goals_scored": 2.1,
       "avg_goals_conceded": 1.1
     }
